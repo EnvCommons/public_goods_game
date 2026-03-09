@@ -1,5 +1,6 @@
 import asyncio
 import textarena as ta
+import re
 import openai
 from typing import List, Tuple
 from pydantic import BaseModel
@@ -66,6 +67,11 @@ class PublicGoodsGameEnvironment(Environment):
 
     def _format_observation(self, observation) -> str:
         if isinstance(observation, str):
+            match = None
+            for m in re.finditer(r'^\[(?!GAME\])[^\]]+\].*$', observation, re.MULTILINE):
+                match = m
+            if match:
+                return observation[match.end():].lstrip('\n')
             return observation
         if isinstance(observation, list):
             if not observation:
