@@ -170,15 +170,17 @@ class PublicGoodsGameEnvironment(Environment):
 
         player_id, observation = self.ta_env.get_observation()
         if player_id != self.AGENT_PLAYER_ID:
+            after_move_obs = self._format_observation(observation)
             obs_text = await self._run_opponent_turns(player_id, observation)
             if self.game_done:
                 summary, reward, finished = self._handle_game_end()
                 return ToolOutput(
-                    blocks=[TextBlock(text=summary)],
+                    blocks=[TextBlock(text=f"After your move:\n{after_move_obs}\n\n{summary}")],
                     metadata={"turn": self.turn_count, "reward": reward},
                     reward=reward,
                     finished=True,
                 )
+            obs_text = f"After your move:\n{after_move_obs}\n\nAfter opponent's response:\n{obs_text}"
         else:
             obs_text = self._format_observation(observation)
 
