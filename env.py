@@ -68,13 +68,12 @@ class PublicGoodsGameEnvironment(Environment):
         if isinstance(observation, str):
             return observation
         if isinstance(observation, list):
-            parts = []
-            for item in observation:
-                if isinstance(item, tuple) and len(item) >= 2:
-                    parts.append(str(item[1]))
-                else:
-                    parts.append(str(item))
-            return "\n".join(parts)
+            if not observation:
+                return ""
+            last = observation[-1]
+            if isinstance(last, tuple) and len(last) >= 2:
+                return str(last[1])
+            return str(last)
         return str(observation)
 
     def _map_reward(self, ta_rewards: dict, player_id: int) -> float:
