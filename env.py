@@ -108,7 +108,7 @@ class PublicGoodsGameEnvironment(Environment):
 
     async def _run_opponent_turns(self, current_player_id: int, current_observation) -> str:
         while current_player_id != self.AGENT_PLAYER_ID:
-            obs_text = self._format_observation(current_observation)
+            obs_text = current_observation if isinstance(current_observation, str) else str(current_observation)
             opponent_action = await self._get_opponent_action(obs_text, current_player_id)
             done, info = self.ta_env.step(action=opponent_action)
             if done:
