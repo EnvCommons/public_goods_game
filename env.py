@@ -194,7 +194,7 @@ class PublicGoodsGameEnvironment(Environment):
     @tool
     async def send_message(self, params: SendMessageParams) -> ToolOutput:
         """Send a chat message during the communication phase."""
-        return await self._do_action(params.message)
+        return await self._do_action(f"{{{params.message}}}")
 
     @tool
     async def contribute(self, params: ContributeParams) -> ToolOutput:
