@@ -104,7 +104,7 @@ class PublicGoodsGameEnvironment(Environment):
             )
             return response.choices[0].message.content.strip()
         except Exception:
-            return "[contribute 10]"
+            return "[10]"
 
     async def _run_opponent_turns(self, current_player_id: int, current_observation) -> str:
         while current_player_id != self.AGENT_PLAYER_ID:
@@ -199,4 +199,4 @@ class PublicGoodsGameEnvironment(Environment):
     @tool
     async def contribute(self, params: ContributeParams) -> ToolOutput:
         """Contribute tokens to the public pot (0-20)."""
-        return await self._do_action(f"[contribute {params.tokens}]")
+        return await self._do_action(f"[{params.tokens}]")
