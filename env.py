@@ -46,6 +46,7 @@ class PublicGoodsGameEnvironment(Environment):
         self.ta_env = ta.make(env_id=self.config.env_id)
         self.game_done = False
         self.turn_count = 0
+        self.opponent_histories: dict[int, list] = {}
 
     @classmethod
     def list_splits(cls) -> list[str]:
@@ -86,23 +87,37 @@ class PublicGoodsGameEnvironment(Environment):
         raw = ta_rewards.get(player_id, 0)
         return max(0.0, min(1.0, (raw + 1.0) / 2.0))
 
-    async def _get_opponent_action(self, observation: str, player_id: int) -> str:
-        system_prompt = (
-            f"You are Player {player_id} in a Public Goods Game. "
-            f"For chat turns, send a short message. "
-            f"For contribution turns, respond with [contribute X] where X is 0-20. "
-            f"Respond with ONLY your message or contribution."
+    def _opponent_system_prompt(self, player_id: int) -> str:
+        return (
+            f"You are Player {player_id} in a 3-player Public Goods Game.\n\n"
+            f"Rules:\n"
+            f"- Each round every player receives 20 tokens.\n"
+            f"- During communication phases, you discuss strategy with other players.\n"
+            f"- During the decision phase, you choose how many tokens (0-20) to contribute to the public pot.\n"
+            f"- All contributions are multiplied by 1.5 and split equally among all players.\n"
+            f"- Your payoff = tokens you kept + your share of the public pot.\n"
+            f"- The game lasts 3 rounds, each with communication phases then a decision.\n\n"
+            f"For chat turns, send a short public message.\n"
+            f"For contribution turns, respond with [X] where X is your contribution (0-20).\n"
+            f"Respond with ONLY your message or contribution decision."
         )
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": observation},
-        ]
+
+    async def _get_opponent_action(self, observation: str, player_id: int) -> str:
+        if player_id not in self.opponent_histories:
+            self.opponent_histories[player_id] = [
+                {"role": "system", "content": self._opponent_system_prompt(player_id)}
+            ]
+
+        self.opponent_histories[player_id].append({"role": "user", "content": observation})
+
         try:
             response = await self.opponent_client.chat.completions.create(
                 model="gpt-5-mini",
-                messages=messages,
+                messages=self.opponent_histories[player_id],
             )
-            return response.choices[0].message.content.strip()
+            reply = response.choices[0].message.content.strip()
+            self.opponent_histories[player_id].append({"role": "assistant", "content": reply})
+            return reply
         except Exception:
             return "[10]"
 
